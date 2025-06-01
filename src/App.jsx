@@ -1,25 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import ImageViewer from './ImgView';
-import i1 from "../data/images/000000000785.jpg";
-import i2 from "../data/images/000000001268.jpg";
 
 const loadData = async () => {
-  return [
-    {
-      src: i1,
-      alt: 'Cute kitten 1',
-      bboxes: [
-        { x: 50, y: 50, width: 150, height: 150, className: 'Kitten', confidence: 0.95 },
-      ],
-    },
-    {
-      src: i2,
-      alt: 'Cute kitten 2',
-      bboxes: [
-        { x: 100, y: 80, width: 120, height: 120, className: 'Kitten', confidence: 0.87 },
-      ],
-    },
-  ];
+  const images = [];
+  try {
+    const imageModules = import.meta.glob('../data/images/*.jpg');
+    const jsonModules = import.meta.glob('../data/jsons/*.json');
+
+    for (const path in imageModules) {
+      const module = await imageModules[path]();
+      const imageName = path.split('/').pop(); 
+      const jsonPath = `../data/jsons/${imageName.replace('.jpg', '.json')}`; 
+      let jsonData = null;
+      if (jsonModules[jsonPath]) {
+        const jsonModule = await jsonModules[jsonPath]();
+        jsonData = jsonModule.default; 
+      }
+
+      const width = jsonData?.input.data.width || 0;
+      const height = jsonData?.input.data.height || 0;
+
+      const bboxes = jsonData?.output.predictions.map(prediction => ({
+        confidence: prediction.confidence,
+        label: prediction.label,
+        x: prediction.bbox.x,
+        y: prediction.bbox.y,
+        width: prediction.bbox.width,
+        height: prediction.bbox.height,
+      })) || [];
+
+      images.push({
+        src: module.default,
+        alt: `Image ${imageName}`,
+        bboxes, 
+        width,
+        height,
+      });
+    }
+  } catch (error) {
+    console.error('Error loading images or JSON data:', error);
+    throw error;
+  }
+  return images;
 };
 
 const App = () => {
@@ -32,7 +54,7 @@ const App = () => {
         const data = await loadData();
         setImages(data);
       } catch (err) {
-        setError('Error loading images');
+        setError('Error loading images or JSON data');
       }
     };
 
@@ -50,7 +72,7 @@ const App = () => {
   return (
     <div className="min-h-screen bg-gray-800 flex flex-col items-center py-10 px-4">
       <div className="bg-gray-900 rounded-xl shadow-lg w-full max-w-5xl p-8 flex flex-col h-full">
-        <h1 className="text-4xl font-extrabold mb-8 text-center text-white drop-shadow-md">
+        <h1 className="text-4xl font-extrabold mb-5 text-center text-white drop-shadow-md">
           Image Viewer
         </h1>
         <div className="flex flex-col flex-grow rounded-lg overflow-hidden shadow-inner bg-gray-700">
