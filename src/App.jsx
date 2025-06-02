@@ -4,62 +4,109 @@ import ImageViewer from './ImgView';
 const loadData = async () => {
   const images = [];
   try {
-    const imageModules = import.meta.glob('../data/images/*.jpg');
-    const jsonModules = import.meta.glob('../data/jsons/*.json');
+    // Import all images and JSON files
+    const imageModules = import.meta.glob('/data/images/*.jpg');
+    const jsonModules = import.meta.glob('/data/jsons/*.json');
 
-    for (const path in imageModules) {
-      const module = await imageModules[path]();
-      const imageName = path.split('/').pop(); 
-      const jsonPath = `../data/jsons/${imageName.replace('.jpg', '.json')}`; 
-      let jsonData = null;
-      if (jsonModules[jsonPath]) {
-        const jsonModule = await jsonModules[jsonPath]();
-        jsonData = jsonModule.default; 
-      }
+    // Get all image paths
+    const imagePaths = Object.keys(imageModules);
 
-      const width = jsonData?.input.data.width || 0;
-      const height = jsonData?.input.data.height || 0;
+    // Load images in batches
+    const batchSize = 5;
+    for (let i = 0; i < imagePaths.length; i += batchSize) {
+      const batch = imagePaths.slice(i, i + batchSize);
+      
+      await Promise.all(
+        batch.map(async (imagePath) => {
+          try {
+            const imageName = imagePath.split('/').pop();
+            const jsonPath = `/data/jsons/${imageName.replace('.jpg', '.json')}`;
 
-      const bboxes = jsonData?.output.predictions.map(prediction => ({
-        confidence: prediction.confidence,
-        label: prediction.label,
-        x: prediction.bbox.x,
-        y: prediction.bbox.y,
-        width: prediction.bbox.width,
-        height: prediction.bbox.height,
-      })) || [];
+            if (!jsonModules[jsonPath]) {
+              console.warn(`No JSON found for ${imageName}`);
+              return;
+            }
 
-      images.push({
-        src: module.default,
-        alt: `Image ${imageName}`,
-        bboxes, 
-        width,
-        height,
-      });
+            // Load both image and JSON data
+            const imageModule = await imageModules[imagePath]();
+            const jsonModule = await jsonModules[jsonPath]();
+            const jsonData = jsonModule.default;
+
+            if (!jsonData?.input?.data || !jsonData?.output?.predictions) {
+              console.warn(`Invalid JSON data for ${imageName}`);
+              return;
+            }
+
+            images.push({
+              src: imageModule.default,
+              alt: `Image ${imageName}`,
+              width: jsonData.input.data.width || 0,
+              height: jsonData.input.data.height || 0,
+              bboxes: jsonData.output.predictions.map(prediction => ({
+                confidence: prediction.confidence,
+                label: prediction.label,
+                x: prediction.bbox.x,
+                y: prediction.bbox.y,
+                width: prediction.bbox.width,
+                height: prediction.bbox.height,
+              }))
+            });
+          } catch (err) {
+            console.warn(`Error loading ${imagePath}:`, err);
+          }
+        })
+      );
     }
+
+    return images.sort((a, b) => a.alt.localeCompare(b.alt));
   } catch (error) {
     console.error('Error loading images or JSON data:', error);
     throw error;
   }
-  return images;
 };
 
 const App = () => {
   const [images, setImages] = useState([]);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchData = async () => {
       try {
         const data = await loadData();
-        setImages(data);
+        if (mounted && data.length > 0) {
+          setImages(data);
+        } else if (mounted) {
+          setError('No images found. Make sure images are in the correct folder.');
+        }
       } catch (err) {
-        setError('Error loading images or JSON data');
+        if (mounted) {
+          console.error('Loading error:', err);
+          setError('Error loading images. Check console for details.');
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-800">
+        <p className="text-xl font-semibold text-white">Loading images...</p>
+      </div>
+    );
+  }
 
   if (error) {
     return (
