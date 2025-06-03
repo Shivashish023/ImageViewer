@@ -39,9 +39,6 @@ const ImageViewer = ({ images }) => {
   };
 
   const handleZoomIn = () => {
-    const container = containerRef.current;
-    if (!container) return;
-    
     const newScale = scale + 0.1;
     setScale(newScale);
   };
@@ -113,6 +110,14 @@ const ImageViewer = ({ images }) => {
       isDragging = false;
     };
 
+    const handleWheel = (e) => {
+      e.preventDefault();
+      const newScale = e.deltaY < 0 ? scale + 0.1 : scale - 0.1;
+      if (newScale >= 1) {
+        setScale(newScale);
+      }
+    };
+
     image?.addEventListener("mousedown", handleMouseDown);
     image?.addEventListener("mousemove", handleMouseMove);
     image?.addEventListener("mouseup", handleMouseUp);
@@ -120,6 +125,7 @@ const ImageViewer = ({ images }) => {
     image?.addEventListener("touchstart", handleTouchStart);
     image?.addEventListener("touchmove", handleTouchMove);
     image?.addEventListener("touchend", handleTouchEnd);
+    containerRef.current?.addEventListener("wheel", handleWheel);
 
     return () => {
       image?.removeEventListener("mousedown", handleMouseDown);
@@ -129,6 +135,7 @@ const ImageViewer = ({ images }) => {
       image?.removeEventListener("touchstart", handleTouchStart);
       image?.removeEventListener("touchmove", handleTouchMove);
       image?.removeEventListener("touchend", handleTouchEnd);
+      containerRef.current?.removeEventListener("wheel", handleWheel);
     };
   }, [imgRef, scale]);
 
@@ -172,7 +179,7 @@ const ImageViewer = ({ images }) => {
     <div className="flex flex-col min-h-[70vh] bg-gray-900 text-white items-center justify-center p-3 md:p-8">
       <div 
         ref={containerRef}
-        className="relative border-2 border-gray-400 overflow-hidden"
+        className="relative border-2 border-gray-400 overflow-hidden "
         style={{
           height: containerDimensions.height,
           width: containerDimensions.width,
@@ -188,15 +195,16 @@ const ImageViewer = ({ images }) => {
               height: '100%',
               transform: `scale(${scale})`,
               transformOrigin: '50% 50%',
-              transition: 'transform 0.1s ease-out'
+              transition: 'transform 0.1s ease-out',
+             
             }}
           >
             <img
               src={currentImage.src}
               ref={imgRef}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain "
               style={{
-                cursor: "move",
+                cursor: "pointer",
                 transform: `translate(${pos.x}px, ${pos.y}px)`,
               }}
               draggable={false}
