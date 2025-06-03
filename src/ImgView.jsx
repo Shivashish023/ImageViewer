@@ -11,7 +11,8 @@ const ImageViewer = ({ images }) => {
   const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
 
   const currentImage = images[currentIndex];
-   useEffect(() => {
+
+  useEffect(() => {
     if (currentImage?.bboxes) {
       const colors = currentImage.bboxes.map(() => getRandomColor());
       setBboxColors(colors);
@@ -51,7 +52,8 @@ const ImageViewer = ({ images }) => {
       setScale(newScale);
     }
   };
-   const getRandomColor = () => {
+
+  const getRandomColor = () => {
     const letters = '0123456789ABCDEF';
     let color = '#';
     for (let i = 0; i < 6; i++) {
@@ -89,16 +91,44 @@ const ImageViewer = ({ images }) => {
       isDragging = false;
     };
 
+    const handleTouchStart = (e) => {
+      isDragging = true;
+      const touch = e.touches[0];
+      prevPos = { x: touch.clientX, y: touch.clientY };
+    };
+
+    const handleTouchMove = (e) => {
+      if (!isDragging) return;
+      const touch = e.touches[0];
+      const dx = touch.clientX - prevPos.x;
+      const dy = touch.clientY - prevPos.y;
+      prevPos = { x: touch.clientX, y: touch.clientY };
+      setPos((pos) => ({
+        x: pos.x + dx,
+        y: pos.y + dy
+      }));
+    };
+
+    const handleTouchEnd = () => {
+      isDragging = false;
+    };
+
     image?.addEventListener("mousedown", handleMouseDown);
     image?.addEventListener("mousemove", handleMouseMove);
     image?.addEventListener("mouseup", handleMouseUp);
     image?.addEventListener("mouseleave", handleMouseLeave);
+    image?.addEventListener("touchstart", handleTouchStart);
+    image?.addEventListener("touchmove", handleTouchMove);
+    image?.addEventListener("touchend", handleTouchEnd);
 
     return () => {
       image?.removeEventListener("mousedown", handleMouseDown);
       image?.removeEventListener("mousemove", handleMouseMove);
       image?.removeEventListener("mouseup", handleMouseUp);
       image?.removeEventListener("mouseleave", handleMouseLeave);
+      image?.removeEventListener("touchstart", handleTouchStart);
+      image?.removeEventListener("touchmove", handleTouchMove);
+      image?.removeEventListener("touchend", handleTouchEnd);
     };
   }, [imgRef, scale]);
 
