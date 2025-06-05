@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import ImageViewer from './ImgView';
-
+const LoadingSpinner = () => (
+  <div className="flex flex-col items-center gap-4">
+    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+    <p className="text-xl font-semibold text-white animate-pulse">Loading </p>
+  </div>
+);
 const loadData = async () => {
   const images = [];
   try {
-    // Import all images and JSON files
+   
     const imageModules = import.meta.glob('/data/images/*.jpg');
     const jsonModules = import.meta.glob('/data/jsons/*.json');
 
-    // Get all image paths
     const imagePaths = Object.keys(imageModules);
 
-    // Load images in batches
     const batchSize = 5;
     for (let i = 0; i < imagePaths.length; i += batchSize) {
       const batch = imagePaths.slice(i, i + batchSize);
-      
       await Promise.all(
         batch.map(async (imagePath) => {
           try {
@@ -27,7 +29,6 @@ const loadData = async () => {
               return;
             }
 
-            // Load both image and JSON data
             const imageModule = await imageModules[imagePath]();
             const jsonModule = await jsonModules[jsonPath]();
             const jsonData = jsonModule.default;
@@ -103,7 +104,7 @@ const App = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-800">
-        <p className="text-xl font-semibold text-white">Loading images...</p>
+       <LoadingSpinner/>
       </div>
     );
   }
