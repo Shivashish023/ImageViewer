@@ -273,7 +273,11 @@ const ImageViewer = ({ images }) => {
         )}
         
         {currentImage?.bboxes?.length > 0 && (
-          <label className="absolute top-2 right-2 flex items-center gap-2 bg-gray-800 bg-opacity-75 px-3 py-1.5 rounded-md cursor-pointer hover:bg-opacity-90 transition-all duration-200">
+         <label 
+            className="absolute top-2 right-2 flex items-center gap-2 bg-gray-800 bg-opacity-75 px-3 py-1.5 rounded-md cursor-pointer hover:bg-opacity-90 transition-all duration-200 z-10"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
             <input
               type="checkbox"
               checked={showBboxes}
