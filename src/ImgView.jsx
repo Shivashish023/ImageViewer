@@ -8,6 +8,7 @@ const ImageViewer = ({ images }) => {
   const [bboxColors, setBboxColors] = useState([]);
   const [imageScale, setImageScale] = useState(1);
   const [showBboxes, setShowBboxes] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
   const imgRef = useRef(null);
   const containerRef = useRef(null);
   const touchStartRef = useRef({ x: 0, y: 0 });
@@ -15,6 +16,10 @@ const ImageViewer = ({ images }) => {
   const initialPinchDistanceRef = useRef(null);
 
   const currentImage = images[currentIndex];
+
+  useEffect(() => {
+    setIsImageLoaded(false);
+  }, [currentIndex]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -230,8 +235,9 @@ const ImageViewer = ({ images }) => {
                 }}
                 draggable={false}
                 alt={currentImage.alt}
+                onLoad={() => setIsImageLoaded(true)}
               />
-              {showBboxes && (
+              {showBboxes && isImageLoaded && (
                 <div
                   style={{
                     position: 'absolute',
