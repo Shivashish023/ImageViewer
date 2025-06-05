@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaSearchPlus, FaSearchMinus } from 'react-icons/fa';
+import { FaSearchPlus, FaSearchMinus,FaLayerGroup } from 'react-icons/fa';
 
 const ImageViewer = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -272,21 +272,6 @@ const ImageViewer = ({ images }) => {
           </div>
         )}
         
-        {currentImage?.bboxes?.length > 0 && (
-         <label 
-            className="absolute top-2 right-2 flex items-center gap-2 bg-gray-800 bg-opacity-75 px-3 py-1.5 rounded-md cursor-pointer hover:bg-opacity-90 transition-all duration-200 z-10"
-            onClick={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-          >
-            <input
-              type="checkbox"
-              checked={showBboxes}
-              onChange={(e) => setShowBboxes(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500 z-100"
-            />
-            <span className="text-sm text-white select-none">Overlay</span>
-          </label>
-        )}
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between items-center w-full max-w-[90vw] md:max-w-[85vw] lg:max-w-[80vw] xl:max-w-[1000px] mt-4 px-2 sm:px-4 gap-4">
@@ -298,21 +283,37 @@ const ImageViewer = ({ images }) => {
           Previous
         </button>
         
-        <div className="flex items-center space-x-2 order-first sm:order-none">
-          <button
-            onClick={handleZoomIn}
-            className="p-2 text-white hover:text-gray-300 cursor-pointer text-lg md:text-xl"
-            aria-label="Zoom In"
-          >
-            <FaSearchPlus />
-          </button>
-          <button
-            onClick={handleZoomOut}
-            className="p-2 text-white hover:text-gray-300 cursor-pointer text-lg md:text-xl"
-            aria-label="Zoom Out"
-          >
-            <FaSearchMinus />
-          </button>
+        <div className="flex items-center gap-4 order-first sm:order-none">
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleZoomIn}
+              className="p-2 text-white hover:text-gray-300 cursor-pointer text-lg md:text-xl"
+              aria-label="Zoom In"
+            >
+              <FaSearchPlus />
+            </button>
+            <button
+              onClick={handleZoomOut}
+              className="p-2 text-white hover:text-gray-300 cursor-pointer text-lg md:text-xl"
+              aria-label="Zoom Out"
+            >
+              <FaSearchMinus />
+            </button>
+          </div>
+
+          {currentImage?.bboxes?.length > 0 && (
+            <button
+              onClick={() => setShowBboxes(!showBboxes)}
+              className={`flex items-center cursor-pointer gap-2 px-3 py-1.5 rounded-md transition-all duration-200 ${
+                showBboxes 
+                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+              }`}
+            >
+              <FaLayerGroup className={`text-lg ${showBboxes ? 'text-white' : 'text-gray-300'}`} />
+              <span className="text-sm font-medium">Overlay</span>
+            </button>
+          )}
         </div>
         
         <button
